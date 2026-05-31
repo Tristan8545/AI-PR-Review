@@ -1,5 +1,6 @@
 from app.ai.reviewer import DeepSeekReviewer
 from app.analyzer.context_builder import build_review_context
+from app.analyzer.review_quality import improve_review_quality
 from app.analyzer.rule_analyzer import analyze_rules
 from app.config import Settings
 from app.github.github_client import GitHubClient
@@ -18,5 +19,5 @@ class ReviewService:
         findings = analyze_rules(pr)
         context = build_review_context(pr, findings, self.settings.max_patch_chars)
         review = await self.reviewer.review(pr, context, findings)
+        review = improve_review_quality(pr, review, findings)
         return pr, review
-

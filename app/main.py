@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.analyzer.context_builder import build_review_context
+from app.analyzer.review_quality import improve_review_quality
 from app.analyzer.rule_analyzer import analyze_rules
 from app.ai.reviewer import DeepSeekReviewer
 from app.config import get_settings
@@ -38,6 +39,7 @@ async def review(request: Request, pr_url: str = Form(""), use_demo: str | None 
             findings = analyze_rules(pr)
             context = build_review_context(pr, findings, settings.max_patch_chars)
             review_result = await DeepSeekReviewer(settings).review(pr, context, findings)
+            review_result = improve_review_quality(pr, review_result, findings)
         else:
             pr, review_result = await ReviewService(settings).analyze_pr(pr_url)
 
@@ -56,4 +58,3 @@ async def review(request: Request, pr_url: str = Form(""), use_demo: str | None 
             },
             status_code=400,
         )
-
