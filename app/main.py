@@ -15,6 +15,7 @@ from app.services.review_service import ReviewService
 app = FastAPI(title="AI PR Review Assistant")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+review_service = ReviewService(get_settings())
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -41,7 +42,7 @@ async def review(request: Request, pr_url: str = Form(""), use_demo: str | None 
             review_result = await DeepSeekReviewer(settings).review(pr, context, findings)
             review_result = improve_review_quality(pr, review_result, findings)
         else:
-            pr, review_result = await ReviewService(settings).analyze_pr(pr_url)
+            pr, review_result = await review_service.analyze_pr(pr_url)
 
         return templates.TemplateResponse(
             "result.html",
