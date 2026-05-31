@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Review Result</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <a class="back" href="/">返回首页</a>
+
+      <section class="hero compact">
+        <div>
+          <p class="eyebrow">{{ review.mode }} review</p>
+          <h1>{{ pr.title }}</h1>
+          <p class="subtitle">{{ pr.owner }}/{{ pr.repo }} #{{ pr.number }} · {{ pr.head_branch }} → {{ pr.base_branch }}</p>
+        </div>
+        <div class="risk {{ review.risk_level }}">{{ review.risk_level }}</div>
+      </section>
+
+      <section class="panel">
+        <h2>PR 变更总结</h2>
+        <p>{{ review.summary }}</p>
+      </section>
+
+      <section class="panel">
+        <h2>关键变化</h2>
+        <ul>
+          {% for item in review.key_changes %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>风险代码识别</h2>
+        <div class="risk-list">
+          {% for risk in review.risks %}
+            <article class="risk-item">
+              <div class="risk-head">
+                <strong>{{ risk.title }}</strong>
+                <span class="badge {{ risk.severity }}">{{ risk.severity }}</span>
+              </div>
+              <p class="path">{{ risk.file }}{% if risk.line %}:{{ risk.line }}{% endif %}</p>
+              <p>{{ risk.reason }}</p>
+              <p><strong>建议：</strong>{{ risk.suggestion }}</p>
+              <p class="confidence">confidence: {{ "%.0f"|format(risk.confidence * 100) }}%</p>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="grid">
+        <div>
+          <h2>Review 建议</h2>
+          <ul>
+            {% for item in review.suggestions %}
+              <li>{{ item }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div>
+          <h2>建议补充测试</h2>
+          <ul>
+            {% for item in review.suggested_tests %}
+              <li>{{ item }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>变更文件</h2>
+        <div class="files">
+          {% for file in pr.changed_files %}
+            <div class="file-row">
+              <span>{{ file.filename }}</span>
+              <strong>+{{ file.additions }} / -{{ file.deletions }}</strong>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+

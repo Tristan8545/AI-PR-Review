@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI PR Review Assistant</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">AI Code Review</p>
+          <h1>AI PR Review Assistant</h1>
+          <p class="subtitle">输入 GitHub Pull Request 链接，自动生成变更摘要、风险识别和 Review 建议。</p>
+        </div>
+        <div class="status">
+          <span>模型</span>
+          <strong>{{ model }}</strong>
+          <span>模式</span>
+          <strong>{{ "Demo" if demo_mode else "DeepSeek" }}</strong>
+        </div>
+      </section>
+
+      {% if error %}
+        <div class="alert">{{ error }}</div>
+      {% endif %}
+
+      <section class="panel">
+        <form action="/review" method="post">
+          <label for="pr_url">GitHub PR URL</label>
+          <div class="input-row">
+            <input id="pr_url" name="pr_url" placeholder="https://github.com/owner/repo/pull/123" />
+            <button type="submit">开始分析</button>
+          </div>
+          <button class="secondary" type="submit" name="use_demo" value="1">使用内置 Demo 数据</button>
+        </form>
+      </section>
+
+      <section class="grid">
+        <div>
+          <h2>核心能力</h2>
+          <ul>
+            <li>自动获取 PR 元数据与 changed files</li>
+            <li>规则扫描识别敏感路径和危险代码模式</li>
+            <li>DeepSeek 生成结构化 Review 建议</li>
+          </ul>
+        </div>
+        <div>
+          <h2>评分友好设计</h2>
+          <ul>
+            <li>无密钥也可用 Demo 模式复现</li>
+            <li>输出风险等级、证据和测试建议</li>
+            <li>README 可说明模型选择与误报控制</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+
