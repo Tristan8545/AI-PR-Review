@@ -11,6 +11,7 @@ def sample_pr() -> PullRequestData:
         author="demo-user",
         base_branch="main",
         head_branch="feature/login-token-check",
+        head_sha="demo-head-sha",
         html_url="https://github.com/demo/ai-pr-review/pull/1",
         changed_files=[
             ChangedFile(
@@ -26,6 +27,15 @@ def sample_pr() -> PullRequestData:
 +        return True
      payload = decode_token(token)
      return payload.get("user_id") is not None
+""",
+                content="""from app.auth.jwt import decode_token
+
+
+def validate_token(token):
+    if token is None:
+        return True
+    payload = decode_token(token)
+    return payload.get("user_id") is not None
 """,
             ),
             ChangedFile(
@@ -43,4 +53,3 @@ def sample_pr() -> PullRequestData:
             ),
         ],
     )
-

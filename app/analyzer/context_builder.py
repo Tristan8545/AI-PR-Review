@@ -2,6 +2,20 @@ from app.schemas.pr import PullRequestData
 from app.schemas.review import RuleFinding
 
 
+def _build_file_contents(pr: PullRequestData) -> str:
+    blocks: list[str] = []
+    for file in pr.changed_files:
+        if not file.content:
+            continue
+        truncated = " (truncated)" if file.content_truncated else ""
+        blocks.append(
+            f"\n### {file.filename}{truncated}\n"
+            f"```text\n{file.content}\n```"
+        )
+
+    return "\n".join(blocks) or "- No full file content was fetched."
+
+
 def build_review_context(
     pr: PullRequestData, rule_findings: list[RuleFinding], max_patch_chars: int
 ) -> str:
@@ -12,14 +26,14 @@ def build_review_context(
 
     rules = "\n".join(
         f"- [{f.severity}] {f.file}: {f.title} - {f.reason}" for f in rule_findings
-    ) or "- 暂无规则命中"
+    ) or "- No rule findings."
 
     patches: list[str] = []
     remaining = max_patch_chars
     for file in pr.changed_files:
         if remaining <= 0:
             break
-        patch = file.patch or "(GitHub 未返回 patch，可能是二进制文件或变更过大)"
+        patch = file.patch or "(GitHub did not return a patch. The file may be binary or too large.)"
         block = f"\n### {file.filename}\n```diff\n{patch[:remaining]}\n```"
         patches.append(block)
         remaining -= len(block)
@@ -27,19 +41,23 @@ def build_review_context(
     return f"""
 PR: {pr.title}
 URL: {pr.html_url}
-作者: {pr.author}
-分支: {pr.head_branch} -> {pr.base_branch}
+Author: {pr.author}
+Branch: {pr.head_branch} -> {pr.base_branch}
+Head SHA: {pr.head_sha}
 
-PR 描述:
-{pr.body or "(无描述)"}
+PR Description:
+{pr.body or "(No description)"}
 
-变更文件:
+Changed Files:
 {files_summary}
 
-规则分析结果:
+Rule Findings:
 {rules}
 
 Diff:
 {''.join(patches)}
+
+Full File Context:
+{_build_file_contents(pr)}
 """.strip()
 

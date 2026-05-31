@@ -17,6 +17,8 @@ class Settings:
     demo_mode: bool = getenv("DEMO_MODE", "false").lower() in {"1", "true", "yes", "on"}
     max_files: int = int(getenv("MAX_FILES", "20"))
     max_patch_chars: int = int(getenv("MAX_PATCH_CHARS", "80000"))
+    max_context_files: int = int(getenv("MAX_CONTEXT_FILES", "5"))
+    max_file_chars: int = int(getenv("MAX_FILE_CHARS", "12000"))
 
 
 @lru_cache

@@ -45,6 +45,8 @@ DEEPSEEK_API_KEY=
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-v4-flash
 DEMO_MODE=false
+MAX_CONTEXT_FILES=5
+MAX_FILE_CHARS=12000
 ```
 
 说明：
@@ -53,6 +55,8 @@ DEMO_MODE=false
 - `DEEPSEEK_API_KEY`：可选，不配置时使用项目内置比赛演示 Key。
 - `DEEPSEEK_MODEL`：默认 `deepseek-v4-flash`，也可以切换为 `deepseek-v4-pro`。
 - `DEMO_MODE`：设为 `true` 时强制使用 Demo 模式。
+- `MAX_CONTEXT_FILES`：最多获取多少个关键变更文件的完整内容。
+- `MAX_FILE_CHARS`：单个完整文件内容最多发送多少字符给模型。
 
 ## 使用方式
 
@@ -97,6 +101,7 @@ GitHub PR URL -> GitHub API -> 规则风险分析 -> 上下文构建 -> DeepSeek
 - changed files 列表。
 - 每个文件的增删行数和 diff patch。
 - 规则扫描命中的风险提示。
+- PR head 分支上关键变更文件的完整内容，优先选择敏感路径、源码文件和测试文件。
 
 这样可以减少 token 消耗，提高响应速度，也能让模型重点关注本次 PR 的真实变更。
 
