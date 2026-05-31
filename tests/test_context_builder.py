@@ -1,5 +1,5 @@
 from app.analyzer.context_builder import build_review_context
-from app.schemas.pr import ChangedFile, PullRequestData
+from app.schemas.pr import ChangedFile, PullRequestData, RelatedTestFile
 
 
 def test_context_includes_full_file_content():
@@ -21,6 +21,12 @@ def test_context_includes_full_file_content():
                 content="def validate_token(token):\n    return True\n",
             )
         ],
+        related_tests=[
+            RelatedTestFile(
+                filename="tests/auth/test_login.py",
+                content="def test_login():\n    assert True\n",
+            )
+        ],
     )
 
     context = build_review_context(pr, [], 1000)
@@ -29,3 +35,5 @@ def test_context_includes_full_file_content():
     assert "def validate_token" in context
     assert "Head SHA: abc123" in context
     assert "Local Code Context" in context
+    assert "Related Test Context" in context
+    assert "tests/auth/test_login.py" in context

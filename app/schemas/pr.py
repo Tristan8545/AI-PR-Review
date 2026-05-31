@@ -18,6 +18,12 @@ class ChangedFile(BaseModel):
     content_truncated: bool = False
 
 
+class RelatedTestFile(BaseModel):
+    filename: str
+    content: str
+    content_truncated: bool = False
+
+
 class PullRequestData(BaseModel):
     owner: str
     repo: str
@@ -30,3 +36,4 @@ class PullRequestData(BaseModel):
     head_sha: str = ""
     html_url: str
     changed_files: list[ChangedFile] = Field(default_factory=list)
+    related_tests: list[RelatedTestFile] = Field(default_factory=list)

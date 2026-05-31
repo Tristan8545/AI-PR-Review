@@ -1,4 +1,4 @@
-from app.schemas.pr import ChangedFile, PullRequestData
+from app.schemas.pr import ChangedFile, PullRequestData, RelatedTestFile
 
 
 def sample_pr() -> PullRequestData:
@@ -51,5 +51,16 @@ def validate_token(token):
 +    assert validate_token("valid") is True
 """,
             ),
+        ],
+        related_tests=[
+            RelatedTestFile(
+                filename="tests/test_login.py",
+                content="""from app.auth.login import validate_token
+
+
+def test_valid_token():
+    assert validate_token("valid") is True
+""",
+            )
         ],
     )
