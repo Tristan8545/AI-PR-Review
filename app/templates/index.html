@@ -12,7 +12,7 @@
         <div>
           <p class="eyebrow">AI Code Review</p>
           <h1>AI PR Review Assistant</h1>
-          <p class="subtitle">输入 GitHub Pull Request 链接，自动生成变更摘要、风险识别和 Review 建议。</p>
+          <p class="subtitle">输入 GitHub Pull Request 链接，自动生成变更总结、风险识别和 Review 建议。</p>
         </div>
         <div class="status">
           <span>模型</span>
@@ -27,14 +27,20 @@
       {% endif %}
 
       <section class="panel">
-        <form action="/review" method="post">
+        <form id="review-form" action="/review" method="post">
           <label for="pr_url">GitHub PR URL</label>
           <div class="input-row">
             <input id="pr_url" name="pr_url" placeholder="https://github.com/owner/repo/pull/123" />
-            <button type="submit">开始分析</button>
+            <button id="submit-btn" type="submit">开始分析</button>
           </div>
           <button class="secondary" type="submit" name="use_demo" value="1">使用内置 Demo 数据</button>
+          <p id="loading" class="loading" hidden>正在获取 PR 变更并调用 AI 分析，请稍候...</p>
         </form>
+      </section>
+
+      <section class="panel" id="history-panel" hidden>
+        <h2>最近分析</h2>
+        <div class="history-list" id="history-list"></div>
       </section>
 
       <section class="grid">
@@ -49,13 +55,58 @@
         <div>
           <h2>评分友好设计</h2>
           <ul>
-            <li>无密钥也可用 Demo 模式复现</li>
-            <li>输出风险等级、证据和测试建议</li>
-            <li>README 可说明模型选择与误报控制</li>
+            <li>无额外配置也可使用 Demo 模式复现</li>
+            <li>输出风险等级、证据、置信度和测试建议</li>
+            <li>README 说明模型选择、上下文策略和误报控制</li>
           </ul>
         </div>
       </section>
     </main>
+
+    <script>
+      const form = document.querySelector("#review-form");
+      const input = document.querySelector("#pr_url");
+      const loading = document.querySelector("#loading");
+      const submitBtn = document.querySelector("#submit-btn");
+      const historyPanel = document.querySelector("#history-panel");
+      const historyList = document.querySelector("#history-list");
+
+      function getHistory() {
+        try {
+          return JSON.parse(localStorage.getItem("ai-pr-review-history") || "[]");
+        } catch {
+          return [];
+        }
+      }
+
+      function renderHistory() {
+        const history = getHistory();
+        if (!history.length) return;
+        historyPanel.hidden = false;
+        historyList.innerHTML = history
+          .map((url) => `<button class="history-item" type="button" data-url="${url}">${url}</button>`)
+          .join("");
+      }
+
+      form.addEventListener("submit", (event) => {
+        const submitter = event.submitter;
+        const isDemo = submitter && submitter.name === "use_demo";
+        if (!isDemo && input.value.trim()) {
+          const next = [input.value.trim(), ...getHistory().filter((item) => item !== input.value.trim())].slice(0, 5);
+          localStorage.setItem("ai-pr-review-history", JSON.stringify(next));
+        }
+        loading.hidden = false;
+        submitBtn.disabled = true;
+        submitBtn.textContent = "分析中";
+      });
+
+      historyList.addEventListener("click", (event) => {
+        const target = event.target.closest("[data-url]");
+        if (target) input.value = target.dataset.url;
+      });
+
+      renderHistory();
+    </script>
   </body>
 </html>
 
