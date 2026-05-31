@@ -48,6 +48,8 @@ DEMO_MODE=false
 MAX_CONTEXT_FILES=5
 MAX_FILE_CHARS=12000
 MAX_TEST_FILES=3
+CACHE_TTL_SECONDS=600
+CACHE_MAX_ITEMS=32
 ```
 
 说明：
@@ -59,6 +61,8 @@ MAX_TEST_FILES=3
 - `MAX_CONTEXT_FILES`：最多获取多少个关键变更文件的完整内容。
 - `MAX_FILE_CHARS`：单个完整文件内容最多发送多少字符给模型。
 - `MAX_TEST_FILES`：最多自动获取多少个相关测试文件。
+- `CACHE_TTL_SECONDS`：同一个 PR 分析结果的内存缓存时间。
+- `CACHE_MAX_ITEMS`：最多缓存多少个 PR 分析结果。
 
 ## 使用方式
 
@@ -124,6 +128,12 @@ GitHub PR URL -> GitHub API -> 规则风险分析 -> 上下文构建 -> DeepSeek
 - 对鉴权、Token、数据库、支付、密钥、测试删除等场景加权关注。
 - 将规则命中结果一起交给模型，让模型重点分析。
 - 如果模型漏掉规则命中的风险，后处理会把规则发现补回结果列表，作为人工 Review 的兜底提醒。
+
+## 响应速度设计
+
+- 通过 `MAX_FILES`、`MAX_PATCH_CHARS`、`MAX_CONTEXT_FILES` 控制上下文规模，避免大 PR 直接塞满模型上下文。
+- 对同一个 PR URL 使用进程内 TTL 缓存，重复分析时直接返回缓存结果，减少 GitHub API 和 DeepSeek API 重复调用。
+- 缓存命中时结果模式会显示 `+cache`，便于 Demo 时说明性能优化是否生效。
 
 ## 第三方依赖说明
 

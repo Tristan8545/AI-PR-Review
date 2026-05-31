@@ -20,6 +20,8 @@ class Settings:
     max_context_files: int = int(getenv("MAX_CONTEXT_FILES", "5"))
     max_file_chars: int = int(getenv("MAX_FILE_CHARS", "12000"))
     max_test_files: int = int(getenv("MAX_TEST_FILES", "3"))
+    cache_ttl_seconds: int = int(getenv("CACHE_TTL_SECONDS", "600"))
+    cache_max_items: int = int(getenv("CACHE_MAX_ITEMS", "32"))
 
 
 @lru_cache
