@@ -4,7 +4,8 @@ import httpx
 
 from app.config import Settings
 from app.github.pr_url_parser import parse_pr_url
-from app.schemas.pr import ChangedFile, PullRequestData
+from app.analyzer.test_finder import guess_related_test_paths
+from app.schemas.pr import ChangedFile, PullRequestData, RelatedTestFile
 
 
 class GitHubClient:
@@ -34,6 +35,9 @@ class GitHubClient:
             files = await self._fetch_changed_files(client, ref.owner, ref.repo, ref.number)
             head_sha = (pr_json.get("head") or {}).get("sha", "")
             await self._attach_file_contents(client, ref.owner, ref.repo, head_sha, files)
+            related_tests = await self._fetch_related_tests(
+                client, ref.owner, ref.repo, head_sha, files
+            )
 
         return PullRequestData(
             owner=ref.owner,
@@ -47,6 +51,7 @@ class GitHubClient:
             head_sha=head_sha,
             html_url=pr_json.get("html_url", pr_url),
             changed_files=files[: self.settings.max_files],
+            related_tests=related_tests,
         )
 
     async def _fetch_changed_files(
@@ -150,3 +155,38 @@ class GitHubClient:
             return (int(risk_hint) * 3 + int(source_hint) * 2 + int(test_hint), file.changes)
 
         return sorted(candidates, key=score, reverse=True)[: self.settings.max_context_files]
+
+    async def _fetch_related_tests(
+        self,
+        client: httpx.AsyncClient,
+        owner: str,
+        repo: str,
+        head_sha: str,
+        files: list[ChangedFile],
+    ) -> list[RelatedTestFile]:
+        if not head_sha:
+            return []
+
+        existing_changed_paths = {file.filename for file in files}
+        guessed_paths = [
+            path
+            for path in guess_related_test_paths(files)
+            if path not in existing_changed_paths
+        ]
+
+        tests: list[RelatedTestFile] = []
+        for path in guessed_paths:
+            if len(tests) >= self.settings.max_test_files:
+                break
+            content = await self.fetch_file_content(client, owner, repo, path, head_sha)
+            if content is None:
+                continue
+            tests.append(
+                RelatedTestFile(
+                    filename=path,
+                    content=content[: self.settings.max_file_chars],
+                    content_truncated=len(content) > self.settings.max_file_chars,
+                )
+            )
+
+        return tests

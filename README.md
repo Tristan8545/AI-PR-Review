@@ -47,6 +47,7 @@ DEEPSEEK_MODEL=deepseek-v4-flash
 DEMO_MODE=false
 MAX_CONTEXT_FILES=5
 MAX_FILE_CHARS=12000
+MAX_TEST_FILES=3
 ```
 
 说明：
@@ -57,6 +58,7 @@ MAX_FILE_CHARS=12000
 - `DEMO_MODE`：设为 `true` 时强制使用 Demo 模式。
 - `MAX_CONTEXT_FILES`：最多获取多少个关键变更文件的完整内容。
 - `MAX_FILE_CHARS`：单个完整文件内容最多发送多少字符给模型。
+- `MAX_TEST_FILES`：最多自动获取多少个相关测试文件。
 
 ## 使用方式
 
@@ -103,6 +105,7 @@ GitHub PR URL -> GitHub API -> 规则风险分析 -> 上下文构建 -> DeepSeek
 - 规则扫描命中的风险提示。
 - PR head 分支上关键变更文件的完整内容，优先选择敏感路径、源码文件和测试文件。
 - diff 变更行附近的局部代码上下文；Python 文件优先提取所在函数或类，其他语言回退到上下文窗口。
+- 根据源码路径自动猜测并获取相关测试文件，用于判断测试覆盖是否同步更新。
 
 这样可以减少 token 消耗，提高响应速度，也能让模型重点关注本次 PR 的真实变更。
 

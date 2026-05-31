@@ -28,6 +28,18 @@ def _build_local_contexts(pr: PullRequestData) -> str:
     return "\n".join(blocks) or "- No local code context was extracted."
 
 
+def _build_related_tests(pr: PullRequestData) -> str:
+    blocks: list[str] = []
+    for test_file in pr.related_tests:
+        truncated = " (truncated)" if test_file.content_truncated else ""
+        blocks.append(
+            f"\n### {test_file.filename}{truncated}\n"
+            f"```text\n{test_file.content}\n```"
+        )
+
+    return "\n".join(blocks) or "- No related test files were found."
+
+
 def build_review_context(
     pr: PullRequestData, rule_findings: list[RuleFinding], max_patch_chars: int
 ) -> str:
@@ -74,4 +86,7 @@ Full File Context:
 
 Local Code Context:
 {_build_local_contexts(pr)}
+
+Related Test Context:
+{_build_related_tests(pr)}
 """.strip()
