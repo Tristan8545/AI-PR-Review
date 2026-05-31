@@ -28,4 +28,4 @@ def test_context_includes_full_file_content():
     assert "Full File Context" in context
     assert "def validate_token" in context
     assert "Head SHA: abc123" in context
-
+    assert "Local Code Context" in context
