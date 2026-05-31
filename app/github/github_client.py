@@ -1,3 +1,5 @@
+from base64 import b64decode
+
 import httpx
 
 from app.config import Settings
@@ -30,6 +32,8 @@ class GitHubClient:
             pr_json = pr_resp.json()
 
             files = await self._fetch_changed_files(client, ref.owner, ref.repo, ref.number)
+            head_sha = (pr_json.get("head") or {}).get("sha", "")
+            await self._attach_file_contents(client, ref.owner, ref.repo, head_sha, files)
 
         return PullRequestData(
             owner=ref.owner,
@@ -40,6 +44,7 @@ class GitHubClient:
             author=(pr_json.get("user") or {}).get("login", ""),
             base_branch=(pr_json.get("base") or {}).get("ref", ""),
             head_branch=(pr_json.get("head") or {}).get("ref", ""),
+            head_sha=head_sha,
             html_url=pr_json.get("html_url", pr_url),
             changed_files=files[: self.settings.max_files],
         )
@@ -77,3 +82,71 @@ class GitHubClient:
 
         return all_files
 
+    async def _attach_file_contents(
+        self,
+        client: httpx.AsyncClient,
+        owner: str,
+        repo: str,
+        head_sha: str,
+        files: list[ChangedFile],
+    ) -> None:
+        if not head_sha:
+            return
+
+        for file in self._select_context_files(files):
+            if file.status == "removed":
+                continue
+            content = await self.fetch_file_content(
+                client, owner, repo, file.filename, head_sha
+            )
+            if content is None:
+                continue
+            file.content_truncated = len(content) > self.settings.max_file_chars
+            file.content = content[: self.settings.max_file_chars]
+
+    async def fetch_file_content(
+        self,
+        client: httpx.AsyncClient,
+        owner: str,
+        repo: str,
+        path: str,
+        ref: str,
+    ) -> str | None:
+        resp = await client.get(
+            f"{self.base_url}/repos/{owner}/{repo}/contents/{path}",
+            params={"ref": ref},
+        )
+        if resp.status_code in {403, 404}:
+            return None
+        resp.raise_for_status()
+
+        data = resp.json()
+        if data.get("type") != "file" or data.get("encoding") != "base64":
+            return None
+
+        try:
+            return b64decode(data.get("content", "")).decode("utf-8", errors="replace")
+        except ValueError:
+            return None
+
+    def _select_context_files(self, files: list[ChangedFile]) -> list[ChangedFile]:
+        source_exts = (".py", ".java", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs")
+        skip_exts = (".lock", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".pdf", ".zip")
+
+        candidates = [
+            file
+            for file in files[: self.settings.max_files]
+            if not file.filename.lower().endswith(skip_exts)
+        ]
+
+        def score(file: ChangedFile) -> tuple[int, int]:
+            path = file.filename.lower()
+            risk_hint = any(
+                word in path
+                for word in ("auth", "login", "permission", "token", "payment", "sql")
+            )
+            source_hint = path.endswith(source_exts)
+            test_hint = "test" in path
+            return (int(risk_hint) * 3 + int(source_hint) * 2 + int(test_hint), file.changes)
+
+        return sorted(candidates, key=score, reverse=True)[: self.settings.max_context_files]

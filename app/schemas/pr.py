@@ -14,6 +14,8 @@ class ChangedFile(BaseModel):
     deletions: int = 0
     changes: int = 0
     patch: str = ""
+    content: str | None = None
+    content_truncated: bool = False
 
 
 class PullRequestData(BaseModel):
@@ -25,6 +27,6 @@ class PullRequestData(BaseModel):
     author: str = ""
     base_branch: str = ""
     head_branch: str = ""
+    head_sha: str = ""
     html_url: str
     changed_files: list[ChangedFile] = Field(default_factory=list)
-
