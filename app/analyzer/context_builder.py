@@ -1,5 +1,6 @@
 from app.schemas.pr import PullRequestData
 from app.schemas.review import RuleFinding
+from app.analyzer.code_context import build_local_context
 
 
 def _build_file_contents(pr: PullRequestData) -> str:
@@ -14,6 +15,17 @@ def _build_file_contents(pr: PullRequestData) -> str:
         )
 
     return "\n".join(blocks) or "- No full file content was fetched."
+
+
+def _build_local_contexts(pr: PullRequestData) -> str:
+    blocks: list[str] = []
+    for file in pr.changed_files:
+        local_context = build_local_context(file)
+        if not local_context:
+            continue
+        blocks.append(f"\n## {file.filename}\n{local_context}")
+
+    return "\n".join(blocks) or "- No local code context was extracted."
 
 
 def build_review_context(
@@ -59,5 +71,7 @@ Diff:
 
 Full File Context:
 {_build_file_contents(pr)}
-""".strip()
 
+Local Code Context:
+{_build_local_contexts(pr)}
+""".strip()
